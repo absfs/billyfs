@@ -123,3 +123,7 @@ appreciated. Please follow these steps to contribute:
 
 We will review your pull request as soon as possible. Thank you for your
 contributing to the `absfs` ecosystem!
+
+## LICENSE
+
+This project is governed by the MIT License. See [LICENSE](https://github.com/absfs/billyfs/blob/master/LICENSE) for more information.
