@@ -9,7 +9,7 @@ import (
 
 	"github.com/absfs/absfs"
 	"github.com/absfs/basefs"
-	"github.com/go-git/go-billy"
+	"github.com/go-git/go-billy/v5"
 )
 
 // Filesystem implements all functions of the go-billy Filesystem interface
