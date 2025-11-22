@@ -1,6 +1,6 @@
 module github.com/absfs/billyfs
 
-go 1.20
+go 1.22
 
 require (
 	github.com/absfs/absfs v0.0.0-20230318165928-6f31c6ac7458
