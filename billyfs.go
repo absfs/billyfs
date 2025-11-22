@@ -2,6 +2,7 @@ package billyfs
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -41,9 +42,15 @@ func NewFS(fs absfs.SymlinkFileSystem, dir string) (*Filesystem, error) {
 		return nil, os.ErrInvalid
 	}
 
+	// Ensure the path is absolute - convert if necessary
 	if !filepath.IsAbs(dir) {
-		return nil, errors.New("not an absolute path")
+		absDir, err := filepath.Abs(dir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make path absolute: %w", err)
+		}
+		dir = absDir
 	}
+
 	info, err := fs.Stat(dir)
 	if err != nil {
 		return nil, err
