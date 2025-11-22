@@ -6,12 +6,27 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/absfs/absfs"
 	"github.com/absfs/basefs"
 	"github.com/go-git/go-billy/v5"
 )
+
+var (
+	// rng is a package-level random number generator for creating unique temp file names.
+	// It's initialized once and is thread-safe through the use of its internal mutex.
+	rng  *rand.Rand
+	once sync.Once
+)
+
+// initRNG initializes the package-level random number generator
+func initRNG() {
+	once.Do(func() {
+		rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+	})
+}
 
 // Filesystem implements all functions of the go-billy Filesystem interface
 // by using the absfs.FileSystem interface.
@@ -223,7 +238,7 @@ func (f *Filesystem) Readlink(link string) (string, error) {
 // needed.
 func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 	// get the temp directory, then create a temp file
-	rand.Seed(time.Now().UnixNano())
+	initRNG()
 	tempDir := dir
 	if tempDir == "" {
 		tempDir = f.fs.TempDir()
@@ -236,12 +251,12 @@ func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 	return &File{f: file}, nil
 }
 
-// randSeq generates a random string of length n
+// randSeq generates a random string of length n using the package-level RNG
 func randSeq(n int) string {
 	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+		b[i] = letters[rng.Intn(len(letters))]
 	}
 	return string(b)
 }
