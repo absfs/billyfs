@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math/rand"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 	"time"
