@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -520,9 +521,17 @@ func TestTempFile(t *testing.T) {
 		defer os.Remove(file.Name())
 
 		// Verify the file is in the system temp directory
-		systemTempDir := os.TempDir()
-		if !strings.HasPrefix(file.Name(), systemTempDir) {
-			t.Errorf("Expected file to be in system temp dir %s, but got %s", systemTempDir, file.Name())
+		// Use EvalSymlinks to handle platforms where temp dir is a symlink (e.g., macOS)
+		systemTempDir, err := filepath.EvalSymlinks(os.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
+		actualPath, err := filepath.EvalSymlinks(file.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.HasPrefix(actualPath, systemTempDir) {
+			t.Errorf("Expected file to be in system temp dir %s, but got %s", systemTempDir, actualPath)
 		}
 
 		// Verify the file has the prefix
@@ -1288,8 +1297,12 @@ func Example_readDir() {
 		panic(err)
 	}
 
+	// Sort entries by name for consistent output
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name() < entries[j].Name()
+	})
+
 	fmt.Println("Number of entries:", len(entries))
-	// Entries are sorted by filename
 	for _, entry := range entries {
 		fmt.Println("Found:", entry.Name())
 	}
