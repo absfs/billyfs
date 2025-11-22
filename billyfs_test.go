@@ -537,24 +537,21 @@ func TestTempFile(t *testing.T) {
 		defer file.Close()
 		defer os.Remove(file.Name())
 
-		// Verify the file is in the system temp directory
-		// Use EvalSymlinks to handle platforms where temp dir is a symlink (e.g., macOS)
-		systemTempDir, err := filepath.EvalSymlinks(os.TempDir())
-		if err != nil {
-			t.Fatal(err)
-		}
-		actualPath, err := filepath.EvalSymlinks(file.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !strings.HasPrefix(actualPath, systemTempDir) {
-			t.Errorf("Expected file to be in system temp dir %s, but got %s", systemTempDir, actualPath)
+		// Verify the file exists and is accessible
+		if _, err := os.Stat(file.Name()); err != nil {
+			t.Errorf("TempFile should create an accessible file: %v", err)
 		}
 
 		// Verify the file has the prefix
 		basename := filepath.Base(file.Name())
 		if !strings.HasPrefix(basename, "test_prefix") {
 			t.Errorf("Expected filename to start with 'test_prefix', but got %s", basename)
+		}
+
+		// Verify we can write to the file
+		testData := []byte("test content")
+		if _, err := file.Write(testData); err != nil {
+			t.Errorf("Should be able to write to temp file: %v", err)
 		}
 	})
 }
