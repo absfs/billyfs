@@ -53,7 +53,7 @@ func NewFS(fs absfs.SymlinkFileSystem, dir string) (*Filesystem, error) {
 
 	info, err := fs.Stat(dir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("stat %s: %w", dir, err)
 	}
 	if !info.IsDir() {
 		return nil, errors.New("not a directory")
@@ -61,7 +61,7 @@ func NewFS(fs absfs.SymlinkFileSystem, dir string) (*Filesystem, error) {
 
 	fs, err = basefs.NewFS(fs, dir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create base filesystem at %s: %w", dir, err)
 	}
 
 	return &Filesystem{fs: fs}, nil
@@ -75,7 +75,7 @@ func NewFS(fs absfs.SymlinkFileSystem, dir string) (*Filesystem, error) {
 func (f *Filesystem) Create(filename string) (billy.File, error) {
 	file, err := f.fs.Create(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create %s: %w", filename, err)
 	}
 	return &File{f: file}, nil
 }
@@ -86,7 +86,7 @@ func (f *Filesystem) Create(filename string) (billy.File, error) {
 func (f *Filesystem) Open(filename string) (billy.File, error) {
 	file, err := f.fs.Open(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open %s: %w", filename, err)
 	}
 	return &File{f: file}, nil
 }
@@ -98,26 +98,36 @@ func (f *Filesystem) Open(filename string) (billy.File, error) {
 func (f *Filesystem) OpenFile(filename string, flag int, perm os.FileMode) (billy.File, error) {
 	file, err := f.fs.OpenFile(filename, flag, perm)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("openfile %s (flag=%d, perm=%o): %w", filename, flag, perm, err)
 	}
 	return &File{f: file}, nil
 }
 
 // Stat returns a FileInfo describing the named file.
 func (f *Filesystem) Stat(filename string) (os.FileInfo, error) {
-	return f.fs.Stat(filename)
+	info, err := f.fs.Stat(filename)
+	if err != nil {
+		return nil, fmt.Errorf("stat %s: %w", filename, err)
+	}
+	return info, nil
 }
 
 // Rename renames (moves) oldpath to newpath. If newpath already exists and
 // is not a directory, Rename replaces it. OS-specific restrictions may
 // apply when oldpath and newpath are in different directories.
 func (f *Filesystem) Rename(oldpath, newpath string) error {
-	return f.fs.Rename(oldpath, newpath)
+	if err := f.fs.Rename(oldpath, newpath); err != nil {
+		return fmt.Errorf("rename %s to %s: %w", oldpath, newpath, err)
+	}
+	return nil
 }
 
 // Remove removes the named file or directory.
 func (f *Filesystem) Remove(filename string) error {
-	return f.fs.Remove(filename)
+	if err := f.fs.Remove(filename); err != nil {
+		return fmt.Errorf("remove %s: %w", filename, err)
+	}
+	return nil
 }
 
 // Join joins any number of path elements into a single path, adding a
@@ -141,19 +151,28 @@ func (f *Filesystem) Capabilities() billy.Capability {
 // Chmod changes the mode of the named file to mode. If the file is a
 // symbolic link, it changes the mode of the link's target.
 func (f *Filesystem) Chmod(name string, mode os.FileMode) error {
-	return f.fs.Chmod(name, mode)
+	if err := f.fs.Chmod(name, mode); err != nil {
+		return fmt.Errorf("chmod %s to %o: %w", name, mode, err)
+	}
+	return nil
 }
 
 // Lchown changes the numeric uid and gid of the named file. If the file is
 // a symbolic link, it changes the uid and gid of the link itself.
 func (f *Filesystem) Lchown(name string, uid, gid int) error {
-	return f.fs.Lchown(name, uid, gid)
+	if err := f.fs.Lchown(name, uid, gid); err != nil {
+		return fmt.Errorf("lchown %s (uid=%d, gid=%d): %w", name, uid, gid, err)
+	}
+	return nil
 }
 
 // Chown changes the numeric uid and gid of the named file. If the file is a
 // symbolic link, it changes the uid and gid of the link's target.
 func (f *Filesystem) Chown(name string, uid, gid int) error {
-	return f.fs.Chown(name, uid, gid)
+	if err := f.fs.Chown(name, uid, gid); err != nil {
+		return fmt.Errorf("chown %s (uid=%d, gid=%d): %w", name, uid, gid, err)
+	}
+	return nil
 }
 
 // Chtimes changes the access and modification times of the named file,
@@ -162,7 +181,10 @@ func (f *Filesystem) Chown(name string, uid, gid int) error {
 // The underlying filesystem may truncate or round the values to a less
 // precise time unit.
 func (f *Filesystem) Chtimes(name string, atime time.Time, mtime time.Time) error {
-	return f.fs.Chtimes(name, atime, mtime)
+	if err := f.fs.Chtimes(name, atime, mtime); err != nil {
+		return fmt.Errorf("chtimes %s: %w", name, err)
+	}
+	return nil
 }
 
 // go-billy Chroot interface functions
@@ -173,7 +195,7 @@ func (f *Filesystem) Chtimes(name string, atime time.Time, mtime time.Time) erro
 func (f *Filesystem) Chroot(path string) (billy.Filesystem, error) {
 	fs, err := basefs.NewFS(f.fs, path)
 	if err != nil {
-		return &Filesystem{}, err
+		return &Filesystem{}, fmt.Errorf("chroot to %s: %w", path, err)
 	}
 
 	return &Filesystem{fs}, nil
@@ -196,11 +218,15 @@ func (f *Filesystem) ReadDir(path string) ([]os.FileInfo, error) {
 	// open directory at path and read all files
 	dir, err := f.fs.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("readdir %s (open): %w", path, err)
 	}
 	defer dir.Close()
 
-	return dir.Readdir(0)
+	entries, err := dir.Readdir(0)
+	if err != nil {
+		return nil, fmt.Errorf("readdir %s: %w", path, err)
+	}
+	return entries, nil
 }
 
 // MkdirAll creates a directory named path, along with any necessary
@@ -208,7 +234,10 @@ func (f *Filesystem) ReadDir(path string) ([]os.FileInfo, error) {
 // perm are used for all directories that MkdirAll creates. If path is/
 // already a directory, MkdirAll does nothing and returns nil.
 func (f *Filesystem) MkdirAll(filename string, perm os.FileMode) error {
-	return f.fs.MkdirAll(filename, perm)
+	if err := f.fs.MkdirAll(filename, perm); err != nil {
+		return fmt.Errorf("mkdirall %s (perm=%o): %w", filename, perm, err)
+	}
+	return nil
 }
 
 // go-billy Symlink interface functions
@@ -217,19 +246,30 @@ func (f *Filesystem) MkdirAll(filename string, perm os.FileMode) error {
 // symbolic link, the returned FileInfo describes the symbolic link. Lstat
 // makes no attempt to follow the link.
 func (f *Filesystem) Lstat(filename string) (os.FileInfo, error) {
-	return f.fs.Lstat(filename)
+	info, err := f.fs.Lstat(filename)
+	if err != nil {
+		return nil, fmt.Errorf("lstat %s: %w", filename, err)
+	}
+	return info, nil
 }
 
 // Symlink creates a symbolic-link from link to target. target may be an
 // absolute or relative path, and need not refer to an existing node.
 // Parent directories of link are created as necessary.
 func (f *Filesystem) Symlink(target, link string) error {
-	return f.fs.Symlink(target, link)
+	if err := f.fs.Symlink(target, link); err != nil {
+		return fmt.Errorf("symlink %s -> %s: %w", link, target, err)
+	}
+	return nil
 }
 
 // Readlink returns the target path of link.
 func (f *Filesystem) Readlink(link string) (string, error) {
-	return f.fs.Readlink(link)
+	target, err := f.fs.Readlink(link)
+	if err != nil {
+		return "", fmt.Errorf("readlink %s: %w", link, err)
+	}
+	return target, nil
 }
 
 // go-billy TempFile interface functions
@@ -252,7 +292,7 @@ func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 	p := filepath.Join(tempDir, prefix+"_"+randSeq(5))
 	file, err := f.fs.Create(p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("tempfile (dir=%s, prefix=%s): %w", dir, prefix, err)
 	}
 	return &File{f: file}, nil
 }
