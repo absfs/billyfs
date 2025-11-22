@@ -1,6 +1,7 @@
 package billyfs
 
 import (
+	"errors"
 	"math/rand"
 	"os"
 	"path"
@@ -22,22 +23,22 @@ type Filesystem struct {
 // and a path. The path must be an absolute path and must already exist in the
 // fs provided otherwise an error is returned.
 func NewFS(fs absfs.SymlinkFileSystem, dir string) (*Filesystem, error) {
-	//if dir == "" {
-	//	return nil, os.ErrInvalid
-	//}
+	if dir == "" {
+		return nil, os.ErrInvalid
+	}
 
-	// if !path.IsAbs(dir) {
-	// 	return nil, errors.New("not an absolute path")
-	// }
-	// info, err := fs.Stat(dir)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if !info.IsDir() {
-	// 	return nil, errors.New("not a directory")
-	// }
+	if !path.IsAbs(dir) {
+		return nil, errors.New("not an absolute path")
+	}
+	info, err := fs.Stat(dir)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		return nil, errors.New("not a directory")
+	}
 
-	fs, err := basefs.NewFS(fs, dir)
+	fs, err = basefs.NewFS(fs, dir)
 	if err != nil {
 		return nil, err
 	}
