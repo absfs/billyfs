@@ -27,6 +27,13 @@ func setupTestFS(t *testing.T) (billy.Filesystem, string, func()) {
 		t.Fatal(err)
 	}
 
+	// Convert to absolute path (important for Windows)
+	tempDir, err = filepath.Abs(tempDir)
+	if err != nil {
+		os.RemoveAll(tempDir)
+		t.Fatal(err)
+	}
+
 	// Create the underlying absfs filesystem
 	fs, err := osfs.NewFS()
 	if err != nil {
@@ -77,6 +84,11 @@ func TestNewFS(t *testing.T) {
 		}
 		defer os.RemoveAll(tempDir)
 
+		tempDir, err = filepath.Abs(tempDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		bfs, err := billyfs.NewFS(fs, tempDir)
 		if err != nil {
 			t.Fatalf("NewFS failed: %v", err)
@@ -113,6 +125,11 @@ func TestNewFS(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer os.RemoveAll(tempDir)
+
+		tempDir, err = filepath.Abs(tempDir)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		filePath := filepath.Join(tempDir, "testfile")
 		if err := os.WriteFile(filePath, []byte("test"), 0644); err != nil {
@@ -1187,6 +1204,7 @@ func Example_create() {
 	fs, _ := osfs.NewFS()
 	tempDir, _ := os.MkdirTemp("", "example_*")
 	defer os.RemoveAll(tempDir)
+	tempDir, _ = filepath.Abs(tempDir)
 	bfs, _ := billyfs.NewFS(fs, tempDir)
 
 	// Create a new file
@@ -1214,6 +1232,7 @@ func Example_chroot() {
 	fs, _ := osfs.NewFS()
 	tempDir, _ := os.MkdirTemp("", "example_*")
 	defer os.RemoveAll(tempDir)
+	tempDir, _ = filepath.Abs(tempDir)
 	var bfs billy.Filesystem
 	bfs, _ = billyfs.NewFS(fs, tempDir)
 
@@ -1248,6 +1267,7 @@ func Example_tempFile() {
 	fs, _ := osfs.NewFS()
 	tempDir, _ := os.MkdirTemp("", "example_*")
 	defer os.RemoveAll(tempDir)
+	tempDir, _ = filepath.Abs(tempDir)
 	var bfs billy.Filesystem
 	bfs, _ = billyfs.NewFS(fs, tempDir)
 
@@ -1280,6 +1300,7 @@ func Example_readDir() {
 	fs, _ := osfs.NewFS()
 	tempDir, _ := os.MkdirTemp("", "example_*")
 	defer os.RemoveAll(tempDir)
+	tempDir, _ = filepath.Abs(tempDir)
 	var bfs billy.Filesystem
 	bfs, _ = billyfs.NewFS(fs, tempDir)
 
@@ -1319,6 +1340,7 @@ func Example_symlink() {
 	fs, _ := osfs.NewFS()
 	tempDir, _ := os.MkdirTemp("", "example_*")
 	defer os.RemoveAll(tempDir)
+	tempDir, _ = filepath.Abs(tempDir)
 	var bfs billy.Filesystem
 	bfs, _ = billyfs.NewFS(fs, tempDir)
 
