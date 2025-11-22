@@ -42,7 +42,7 @@ func NewFS(fs absfs.SymlinkFileSystem, dir string) (*Filesystem, error) {
 		return nil, os.ErrInvalid
 	}
 
-	if !path.IsAbs(dir) {
+	if !filepath.IsAbs(dir) {
 		return nil, errors.New("not an absolute path")
 	}
 	info, err := fs.Stat(dir)
@@ -243,7 +243,7 @@ func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 	if tempDir == "" {
 		tempDir = f.fs.TempDir()
 	}
-	p := path.Join(tempDir, prefix+"_"+randSeq(5))
+	p := filepath.Join(tempDir, prefix+"_"+randSeq(5))
 	file, err := f.fs.Create(p)
 	if err != nil {
 		return nil, err
