@@ -1,8 +1,8 @@
 github.com/absfs/absfs v0.0.0-20200602175035-e49edc9fef15/go.mod h1:EcuvbVuyyWyu+g4ACjKzyUypG60qSvorqC/hjByBEqY=
-github.com/absfs/absfs v0.0.0-20230318165928-6f31c6ac7458 h1:0yom2chSpwz80swFv+4F3qbaDq+/5UtdUTy5IgMQlnk=
-github.com/absfs/absfs v0.0.0-20230318165928-6f31c6ac7458/go.mod h1:IvFD36FQcMxLLZNhs2Lms+Uosc0G3AJ2JHOJIz8E5d8=
-github.com/absfs/basefs v0.0.0-20240302110531-053a96f8cf86 h1:BroEhnzQ2ufcB2oFor2mHQjgXInrAYgs6ZIHJwY4RkU=
-github.com/absfs/basefs v0.0.0-20240302110531-053a96f8cf86/go.mod h1:2fQY+Bsq4DPh2MMiAqgQtnkf892ZBrM0liDYN29R6ts=
+github.com/absfs/absfs v0.0.0-20251109181304-77e2f9ac4448 h1:uN3Q47kmtV6TIGHZbrCbCf68jWmYDWyTcqq5JuoyON4=
+github.com/absfs/absfs v0.0.0-20251109181304-77e2f9ac4448/go.mod h1:IvFD36FQcMxLLZNhs2Lms+Uosc0G3AJ2JHOJIz8E5d8=
+github.com/absfs/basefs v0.0.0-20251122191037-15af6582251b h1:w5xVEXlSWGLTXd051Qe1N6Ve0kh6oMoeccLa/5Sx8Pk=
+github.com/absfs/basefs v0.0.0-20251122191037-15af6582251b/go.mod h1:2fQY+Bsq4DPh2MMiAqgQtnkf892ZBrM0liDYN29R6ts=
 github.com/absfs/fstesting v0.0.0-20180810212821-8b575cdeb80d h1:EVkAQkoP/iYX7WpkSgaSkHr5AgDdzxR06Hmy+bu4YpU=
 github.com/absfs/fstesting v0.0.0-20180810212821-8b575cdeb80d/go.mod h1:Ib9xUBFJeggV+KCP6/90/ymnt4Siu6V1vBFJrrT1y/s=
 github.com/absfs/osfs v0.0.0-20220705103527-80b6215cf130 h1:kehuUUalOBgwPkBRRW7/hX7b6VeB4Ed0iKX2z2wwqQA=
