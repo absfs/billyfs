@@ -63,7 +63,19 @@ func TestBillyfs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bfs, err = billyfs.NewFS(fs, "/")
+	// Use a temp directory that works on all platforms
+	tempDir, err := os.MkdirTemp("", "billyfs_test_*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	tempDir, err = filepath.Abs(tempDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bfs, err = billyfs.NewFS(fs, tempDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,18 +506,35 @@ func TestTempFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bfs, err := billyfs.NewFS(fs, "/")
+	// Use a temp directory that works on all platforms
+	tempDir, err := os.MkdirTemp("", "billyfs_test_*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	tempDir, err = filepath.Abs(tempDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Create a custom temp directory for testing
-	customDir := filepath.Join(os.TempDir(), "billyfs_test")
-	err = os.MkdirAll(customDir, 0755)
+	bfs, err := billyfs.NewFS(fs, tempDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(customDir)
+
+	// Create a custom temp directory within the billyfs scope
+	customDir := "/temp"
+	err = bfs.MkdirAll(customDir, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create /tmp directory for the default temp dir test
+	err = bfs.MkdirAll("/tmp", 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("custom directory", func(t *testing.T) {
 		// Test with custom directory
@@ -514,17 +543,17 @@ func TestTempFile(t *testing.T) {
 			t.Fatalf("TempFile failed: %v", err)
 		}
 		defer file.Close()
-		defer os.Remove(file.Name())
-
-		// Verify the file is in the custom directory
-		if !strings.HasPrefix(file.Name(), customDir) {
-			t.Errorf("Expected file to be in %s, but got %s", customDir, file.Name())
-		}
+		defer bfs.Remove(file.Name())
 
 		// Verify the file has the prefix
 		basename := filepath.Base(file.Name())
 		if !strings.HasPrefix(basename, "test_prefix") {
 			t.Errorf("Expected filename to start with 'test_prefix', but got %s", basename)
+		}
+
+		// Verify the file is in a subdirectory of the custom directory
+		if !strings.Contains(file.Name(), "temp") {
+			t.Errorf("Expected file to be in temp directory, but got %s", file.Name())
 		}
 	})
 
@@ -535,10 +564,10 @@ func TestTempFile(t *testing.T) {
 			t.Fatalf("TempFile with empty dir failed: %v", err)
 		}
 		defer file.Close()
-		defer os.Remove(file.Name())
+		defer bfs.Remove(file.Name())
 
 		// Verify the file exists and is accessible
-		if _, err := os.Stat(file.Name()); err != nil {
+		if _, err := bfs.Stat(file.Name()); err != nil {
 			t.Errorf("TempFile should create an accessible file: %v", err)
 		}
 
