@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -131,11 +133,83 @@ func (f *Filesystem) Remove(filename string) error {
 }
 
 // Join joins any number of path elements into a single path, adding a
-// Separator if necessary. Join calls filepath.Clean on the result; in
-// particular, all empty strings are ignored. On Windows, the result is a
-// UNC path if and only if the first path element is a UNC path.
+// Separator if necessary. Join calls Clean on the result; in particular,
+// all empty strings are ignored. Uses the filesystem's separator rather
+// than the OS separator, which is important for non-OS filesystems like memfs.
 func (f *Filesystem) Join(elem ...string) string {
-	return filepath.Join(elem...)
+	sep := f.fs.Separator()
+
+	// If the filesystem uses forward slash (most common for virtual filesystems),
+	// we can use the standard path package which always uses '/'
+	if sep == '/' {
+		return path.Join(elem...)
+	}
+
+	// For other separators, manually join and clean
+	sepStr := string([]byte{sep})
+
+	// Filter out empty strings and join with separator
+	var parts []string
+	for _, e := range elem {
+		if e != "" {
+			parts = append(parts, e)
+		}
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+
+	// Join with the filesystem's separator
+	result := strings.Join(parts, sepStr)
+
+	// Clean the path by removing redundant separators and resolving . and ..
+	return cleanPath(result, sep)
+}
+
+// cleanPath cleans a path using the specified separator
+func cleanPath(p string, sep byte) string {
+	if p == "" {
+		return "."
+	}
+
+	sepStr := string([]byte{sep})
+	rooted := p[0] == sep
+
+	// Split path into elements
+	elements := strings.Split(p, sepStr)
+
+	// Process elements to handle . and ..
+	out := make([]string, 0, len(elements))
+	for _, elem := range elements {
+		switch elem {
+		case "", ".":
+			// Skip empty and current directory references
+			continue
+		case "..":
+			// Go up one directory if possible
+			if len(out) > 0 && out[len(out)-1] != ".." {
+				out = out[:len(out)-1]
+			} else if !rooted {
+				out = append(out, "..")
+			}
+		default:
+			out = append(out, elem)
+		}
+	}
+
+	// Build the result
+	result := strings.Join(out, sepStr)
+	if rooted && result == "" {
+		return sepStr
+	}
+	if !rooted && result == "" {
+		return "."
+	}
+	if rooted && result[0] != sep {
+		return sepStr + result
+	}
+	return result
 }
 
 // go-billy Capabilities interface
@@ -289,7 +363,8 @@ func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 	if tempDir == "" {
 		tempDir = f.fs.TempDir()
 	}
-	p := filepath.Join(tempDir, prefix+"_"+randSeq(5))
+	// Use the filesystem's Join method instead of filepath.Join
+	p := f.Join(tempDir, prefix+"_"+randSeq(5))
 	file, err := f.fs.Create(p)
 	if err != nil {
 		return nil, fmt.Errorf("tempfile (dir=%s, prefix=%s): %w", dir, prefix, err)
