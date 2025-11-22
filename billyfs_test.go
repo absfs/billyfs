@@ -2,6 +2,7 @@ package billyfs_test
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -1148,4 +1149,189 @@ func TestChrootOperations(t *testing.T) {
 			t.Error("Expected error when chrooting to nonexistent directory")
 		}
 	})
+}
+
+// Example_newFS demonstrates how to create a new billyfs filesystem.
+func Example_newFS() {
+	// Create the underlying absfs filesystem
+	fs, err := osfs.NewFS()
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a billyfs wrapper for the /tmp directory
+	bfs, err := billyfs.NewFS(fs, "/tmp")
+	if err != nil {
+		panic(err)
+	}
+
+	// Now you can use bfs as a billy.Filesystem
+	_ = bfs
+	fmt.Println("Filesystem created successfully")
+	// Output:
+	// Filesystem created successfully
+}
+
+// Example_create demonstrates how to create and write to a file.
+func Example_create() {
+	// Setup filesystem
+	fs, _ := osfs.NewFS()
+	tempDir, _ := os.MkdirTemp("", "example_*")
+	defer os.RemoveAll(tempDir)
+	bfs, _ := billyfs.NewFS(fs, tempDir)
+
+	// Create a new file
+	file, err := bfs.Create("example.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	// Write to the file
+	content := []byte("Hello, World!")
+	n, err := file.Write(content)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Bytes written:", n)
+	// Output:
+	// Bytes written: 13
+}
+
+// Example_chroot demonstrates how to restrict filesystem access to a subdirectory.
+func Example_chroot() {
+	// Setup filesystem
+	fs, _ := osfs.NewFS()
+	tempDir, _ := os.MkdirTemp("", "example_*")
+	defer os.RemoveAll(tempDir)
+	var bfs billy.Filesystem
+	bfs, _ = billyfs.NewFS(fs, tempDir)
+
+	// Create a subdirectory
+	_ = bfs.MkdirAll("/projects/myapp", 0755)
+
+	// Create a file in the subdirectory
+	file, _ := bfs.Create("/projects/myapp/config.txt")
+	file.Write([]byte("configuration"))
+	file.Close()
+
+	// Chroot to the subdirectory - now it becomes the root
+	chrootFS, err := bfs.(billy.Chroot).Chroot("/projects/myapp")
+	if err != nil {
+		panic(err)
+	}
+
+	// Access the file using a path relative to the new root
+	info, err := chrootFS.Stat("config.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("File found:", info.Name())
+	// Output:
+	// File found: config.txt
+}
+
+// Example_tempFile demonstrates how to create a temporary file.
+func Example_tempFile() {
+	// Setup filesystem
+	fs, _ := osfs.NewFS()
+	tempDir, _ := os.MkdirTemp("", "example_*")
+	defer os.RemoveAll(tempDir)
+	var bfs billy.Filesystem
+	bfs, _ = billyfs.NewFS(fs, tempDir)
+
+	// Create a custom temp directory
+	customTempDir := "/temp"
+	_ = bfs.MkdirAll(customTempDir, 0755)
+
+	// Create a temporary file with a prefix
+	tempFile, err := bfs.(billy.TempFile).TempFile(customTempDir, "myapp_")
+	if err != nil {
+		panic(err)
+	}
+	defer tempFile.Close()
+	defer bfs.Remove(tempFile.Name())
+
+	// Write to the temp file
+	tempFile.Write([]byte("temporary data"))
+
+	// The filename will have the prefix plus a random suffix
+	name := filepath.Base(tempFile.Name())
+	hasPrefix := filepath.Base(name)[:6] == "myapp_"
+	fmt.Println("Has prefix 'myapp_':", hasPrefix)
+	// Output:
+	// Has prefix 'myapp_': true
+}
+
+// Example_readDir demonstrates how to list directory contents.
+func Example_readDir() {
+	// Setup filesystem
+	fs, _ := osfs.NewFS()
+	tempDir, _ := os.MkdirTemp("", "example_*")
+	defer os.RemoveAll(tempDir)
+	var bfs billy.Filesystem
+	bfs, _ = billyfs.NewFS(fs, tempDir)
+
+	// Create some files and directories
+	_ = bfs.MkdirAll("/data", 0755)
+	file1, _ := bfs.Create("/data/file1.txt")
+	file1.Close()
+	file2, _ := bfs.Create("/data/file2.txt")
+	file2.Close()
+	_ = bfs.MkdirAll("/data/subdir", 0755)
+
+	// Read directory contents
+	entries, err := bfs.(billy.Dir).ReadDir("/data")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Number of entries:", len(entries))
+	// Entries are sorted by filename
+	for _, entry := range entries {
+		fmt.Println("Found:", entry.Name())
+	}
+	// Output:
+	// Number of entries: 3
+	// Found: file1.txt
+	// Found: file2.txt
+	// Found: subdir
+}
+
+// Example_symlink demonstrates how to create and use symbolic links.
+func Example_symlink() {
+	// Setup filesystem
+	fs, _ := osfs.NewFS()
+	tempDir, _ := os.MkdirTemp("", "example_*")
+	defer os.RemoveAll(tempDir)
+	var bfs billy.Filesystem
+	bfs, _ = billyfs.NewFS(fs, tempDir)
+
+	// Create a target file
+	targetFile, _ := bfs.Create("target.txt")
+	targetFile.Write([]byte("original content"))
+	targetFile.Close()
+
+	// Create a symbolic link
+	symlinkFS := bfs.(billy.Symlink)
+	err := symlinkFS.Symlink("target.txt", "link.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	// Read the link target
+	linkTarget, err := symlinkFS.Readlink("link.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	// Stat follows the link
+	info, _ := bfs.Stat("link.txt")
+	fmt.Println("Link points to:", filepath.Base(linkTarget))
+	fmt.Println("Target size:", info.Size())
+	// Output:
+	// Link points to: target.txt
+	// Target size: 16
 }
