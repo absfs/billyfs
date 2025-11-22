@@ -224,7 +224,11 @@ func (f *Filesystem) Readlink(link string) (string, error) {
 func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 	// get the temp directory, then create a temp file
 	rand.Seed(time.Now().UnixNano())
-	p := path.Join(f.fs.TempDir(), prefix+"_"+randSeq(5))
+	tempDir := dir
+	if tempDir == "" {
+		tempDir = f.fs.TempDir()
+	}
+	p := path.Join(tempDir, prefix+"_"+randSeq(5))
 	file, err := f.fs.Create(p)
 	if err != nil {
 		return nil, err
