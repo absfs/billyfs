@@ -1211,8 +1211,20 @@ func Example_newFS() {
 		panic(err)
 	}
 
-	// Create a billyfs wrapper for the /tmp directory
-	bfs, err := billyfs.NewFS(fs, "/tmp")
+	// Create a temporary directory
+	tempDir, err := os.MkdirTemp("", "example_*")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	tempDir, err = filepath.Abs(tempDir)
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a billyfs wrapper for the temp directory
+	bfs, err := billyfs.NewFS(fs, tempDir)
 	if err != nil {
 		panic(err)
 	}
