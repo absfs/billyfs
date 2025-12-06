@@ -19,3 +19,8 @@
 
 # Go workspace file
 go.work
+
+# Claude Code and project metadata
+.claude/
+CLAUDE.md
+.project_meta/
