@@ -3,6 +3,7 @@ package billyfs_test
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/absfs/billyfs"
 	"github.com/absfs/osfs"
@@ -18,21 +19,23 @@ func ExampleNewFS() {
 	}
 
 	// Wrap it with billyfs to get a billy.Filesystem interface
-	bfs, err := billyfs.NewFS(fs, "/tmp")
+	tmpDir := os.TempDir()
+	bfs, err := billyfs.NewFS(fs, tmpDir)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
 	// Now bfs implements billy.Filesystem
-	fmt.Println("Root:", bfs.Root())
-	// Output: Root: /tmp
+	root := bfs.Root()
+	fmt.Println("Root is set:", root != "")
+	// Output: Root is set: true
 }
 
 // Example_create demonstrates creating and writing files.
 func Example_create() {
 	fs, _ := osfs.NewFS()
-	bfs, _ := billyfs.NewFS(fs, "/tmp")
+	bfs, _ := billyfs.NewFS(fs, os.TempDir())
 
 	// Create a new file
 	f, err := bfs.Create("example_billyfs.txt")
@@ -52,7 +55,7 @@ func Example_create() {
 // Example_readDir demonstrates reading directory contents.
 func Example_readDir() {
 	fs, _ := osfs.NewFS()
-	bfs, _ := billyfs.NewFS(fs, "/tmp")
+	bfs, _ := billyfs.NewFS(fs, os.TempDir())
 
 	// Create a subdirectory for our test
 	bfs.MkdirAll("example_readdir_test", 0755)
@@ -80,7 +83,7 @@ func Example_readDir() {
 // Example_mkdirAll demonstrates creating nested directories.
 func Example_mkdirAll() {
 	fs, _ := osfs.NewFS()
-	bfs, _ := billyfs.NewFS(fs, "/tmp")
+	bfs, _ := billyfs.NewFS(fs, os.TempDir())
 
 	// Create nested directories
 	err := bfs.MkdirAll("example_billyfs_dir/nested/deep", 0755)
@@ -106,7 +109,7 @@ func Example_mkdirAll() {
 // Example_openAndRead demonstrates opening and reading files.
 func Example_openAndRead() {
 	fs, _ := osfs.NewFS()
-	bfs, _ := billyfs.NewFS(fs, "/tmp")
+	bfs, _ := billyfs.NewFS(fs, os.TempDir())
 
 	// Create and write a file
 	f, _ := bfs.Create("example_read.txt")
@@ -130,7 +133,7 @@ func Example_openAndRead() {
 // Example_capabilities demonstrates checking filesystem capabilities.
 func Example_capabilities() {
 	fs, _ := osfs.NewFS()
-	bfs, _ := billyfs.NewFS(fs, "/tmp")
+	bfs, _ := billyfs.NewFS(fs, os.TempDir())
 
 	caps := bfs.Capabilities()
 	fmt.Println("Has all capabilities:", caps != 0)
