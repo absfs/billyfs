@@ -1,5 +1,10 @@
 # billyfs - Abstract File System Adapter
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/absfs/billyfs.svg)](https://pkg.go.dev/github.com/absfs/billyfs)
+[![Go Report Card](https://goreportcard.com/badge/github.com/absfs/billyfs)](https://goreportcard.com/report/github.com/absfs/billyfs)
+[![CI](https://github.com/absfs/billyfs/actions/workflows/ci.yml/badge.svg)](https://github.com/absfs/billyfs/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 The `billyfs` package enables seamless conversion of any
 `absfs.SymlinkFileSystem` into a file system compatible with
 `github.com/go-git/go-billy/v5`. This integration allows developers to utilize

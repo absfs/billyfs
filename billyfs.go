@@ -148,8 +148,36 @@ func (f *Filesystem) Chtimes(name string, atime time.Time, mtime time.Time) erro
 // Chroot returns a new filesystem from the same type where the new root is
 // the given path. Files outside of the designated directory tree cannot be
 // accessed.
-func (f *Filesystem) Chroot(path string) (billy.Filesystem, error) {
-	fs, err := basefs.NewFS(f.fs, path)
+func (f *Filesystem) Chroot(name string) (billy.Filesystem, error) {
+	// Convert the path to an absolute path using the filesystem's root prefix
+	// since basefs.NewFS requires an absolute path
+	var absPath string
+	if filepath.IsAbs(name) {
+		absPath = name
+	} else {
+		// Get the current root and join with the relative path
+		// basefs cwd is always "/" so we use path.Join instead of filepath.Join
+		cwd, err := f.fs.Getwd()
+		if err != nil {
+			return &Filesystem{}, err
+		}
+		prefix := basefs.Prefix(f.fs)
+		// Join cwd and name using path (not filepath) since basefs uses "/" internally
+		relPath := path.Join(cwd, name)
+		// Now convert to absolute using the prefix
+		absPath = filepath.Join(prefix, relPath)
+	}
+
+	// Unwrap to get the underlying filesystem to avoid double-wrapping
+	underlying := basefs.Unwrap(f.fs)
+	// Type assert to SymlinkFileSystem
+	symlinkFS, ok := underlying.(absfs.SymlinkFileSystem)
+	if !ok {
+		// If underlying doesn't support symlinks, use the wrapped filesystem
+		symlinkFS = f.fs
+	}
+
+	fs, err := basefs.NewFS(symlinkFS, absPath)
 	if err != nil {
 		return &Filesystem{}, err
 	}
