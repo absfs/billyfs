@@ -42,7 +42,8 @@ func TestBillyfsInterfaceCompliance(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bfs, err = billyfs.NewFS(fs, "/")
+	// Use os.TempDir() instead of "/" to work on all platforms
+	bfs, err = billyfs.NewFS(fs, os.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +74,15 @@ func TestNewFS(t *testing.T) {
 			t.Fatalf("failed to create osfs: %v", err)
 		}
 
-		bfs, err := billyfs.NewFS(fs, "/")
+		// Get a platform-specific root path
+		rootPath := filepath.VolumeName(os.TempDir())
+		if rootPath == "" {
+			rootPath = "/"
+		} else {
+			rootPath = rootPath + string(filepath.Separator)
+		}
+
+		bfs, err := billyfs.NewFS(fs, rootPath)
 		if err != nil {
 			t.Fatalf("NewFS with root path failed: %v", err)
 		}
@@ -588,8 +597,10 @@ func TestChroot(t *testing.T) {
 			t.Fatalf("MkdirAll failed: %v", err)
 		}
 
-		// Chroot expects paths relative to filesystem root, prefixed with /
-		chrooted, err := bfs.Chroot("/chrootdir")
+		// Chroot expects paths relative to filesystem root, but it needs to be
+		// an absolute path in the underlying filesystem. Since bfs is rooted at
+		// tmpDir, we use "chrootdir" which basefs will resolve.
+		chrooted, err := bfs.Chroot("chrootdir")
 		if err != nil {
 			t.Fatalf("Chroot failed: %v", err)
 		}
