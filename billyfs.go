@@ -5,12 +5,25 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/absfs/absfs"
 	"github.com/absfs/basefs"
 	"github.com/go-git/go-billy/v5"
 )
+
+var (
+	rng     *rand.Rand
+	rngMu   sync.Mutex
+	rngOnce sync.Once
+)
+
+func initRNG() {
+	rngOnce.Do(func() {
+		rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+	})
+}
 
 // Filesystem implements all functions of the go-billy Filesystem interface
 // by using the absfs.FileSystem interface.
@@ -250,7 +263,7 @@ func (f *Filesystem) Readlink(link string) (string, error) {
 // needed.
 func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 	// get the temp directory, then create a temp file
-	rand.Seed(time.Now().UnixNano())
+	initRNG()
 	p := path.Join(f.fs.TempDir(), prefix+"_"+randSeq(5))
 	file, err := f.fs.Create(p)
 	if err != nil {
@@ -263,8 +276,10 @@ func (f *Filesystem) TempFile(dir string, prefix string) (billy.File, error) {
 func randSeq(n int) string {
 	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	b := make([]rune, n)
+	rngMu.Lock()
+	defer rngMu.Unlock()
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+		b[i] = letters[rng.Intn(len(letters))]
 	}
 	return string(b)
 }
