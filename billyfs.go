@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"os"
 	"path"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -116,7 +115,7 @@ func (f *Filesystem) Remove(filename string) error {
 // particular, all empty strings are ignored. On Windows, the result is a
 // UNC path if and only if the first path element is a UNC path.
 func (f *Filesystem) Join(elem ...string) string {
-	return filepath.Join(elem...)
+	return path.Join(elem...)
 }
 
 // go-billy Capabilities interface
@@ -165,7 +164,7 @@ func (f *Filesystem) Chroot(name string) (billy.Filesystem, error) {
 	// Convert the path to an absolute path using the filesystem's root prefix
 	// since basefs.NewFS requires an absolute path
 	var absPath string
-	if filepath.IsAbs(name) {
+	if path.IsAbs(name) {
 		absPath = name
 	} else {
 		// Get the current root and join with the relative path
@@ -178,7 +177,7 @@ func (f *Filesystem) Chroot(name string) (billy.Filesystem, error) {
 		// Join cwd and name using path (not filepath) since basefs uses "/" internally
 		relPath := path.Join(cwd, name)
 		// Now convert to absolute using the prefix
-		absPath = filepath.Join(prefix, relPath)
+		absPath = path.Join(prefix, relPath)
 	}
 
 	// Unwrap to get the underlying filesystem to avoid double-wrapping
