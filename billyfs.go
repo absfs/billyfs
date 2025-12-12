@@ -9,7 +9,7 @@ import (
 
 	"github.com/absfs/absfs"
 	"github.com/absfs/basefs"
-	"github.com/go-git/go-billy/v5"
+	billy "github.com/go-git/go-billy/v5"
 )
 
 var (
@@ -34,21 +34,6 @@ type Filesystem struct {
 // and a path. The path must be an absolute path and must already exist in the
 // fs provided otherwise an error is returned.
 func NewFS(fs absfs.SymlinkFileSystem, dir string) (*Filesystem, error) {
-	//if dir == "" {
-	//	return nil, os.ErrInvalid
-	//}
-
-	// if !path.IsAbs(dir) {
-	// 	return nil, errors.New("not an absolute path")
-	// }
-	// info, err := fs.Stat(dir)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if !info.IsDir() {
-	// 	return nil, errors.New("not a directory")
-	// }
-
 	fs, err := basefs.NewFS(fs, dir)
 	if err != nil {
 		return nil, err
@@ -208,17 +193,27 @@ func (f *Filesystem) Root() string {
 
 // go-billy Dir interface functions
 
-// ReadDir reads the directory named by dirname and returns a list of
-// directory entries sorted by filename.
-func (f *Filesystem) ReadDir(path string) ([]os.FileInfo, error) {
-	// open directory at path and read all files
-	dir, err := f.fs.Open(path)
+// ReadDir reads the directory named by dirname and returns a list of directory
+// entries sorted by filename. This implements the billy.Dir interface by
+// converting from fs.DirEntry (used internally by absfs) to os.FileInfo.
+func (f *Filesystem) ReadDir(name string) ([]os.FileInfo, error) {
+	// Get directory entries from underlying absfs
+	entries, err := f.fs.ReadDir(name)
 	if err != nil {
 		return nil, err
 	}
-	defer dir.Close()
 
-	return dir.Readdir(0)
+	// Convert []fs.DirEntry to []os.FileInfo
+	infos := make([]os.FileInfo, len(entries))
+	for i, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return nil, err
+		}
+		infos[i] = info
+	}
+
+	return infos, nil
 }
 
 // MkdirAll creates a directory named path, along with any necessary
