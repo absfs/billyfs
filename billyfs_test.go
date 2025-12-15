@@ -405,14 +405,15 @@ func TestRemove(t *testing.T) {
 func TestJoin(t *testing.T) {
 	bfs, _ := newTestFS(t)
 
+	// billyfs uses Unix-style forward slashes for paths, consistent with absfs design
 	tests := []struct {
 		elements []string
 		expected string
 	}{
-		{[]string{"a", "b", "c"}, filepath.Join("a", "b", "c")},
-		{[]string{"a", "b", "c.txt"}, filepath.Join("a", "b", "c.txt")},
-		{[]string{"/a", "b"}, filepath.Join("/a", "b")},
-		{[]string{"a", "", "b"}, filepath.Join("a", "b")},
+		{[]string{"a", "b", "c"}, "a/b/c"},
+		{[]string{"a", "b", "c.txt"}, "a/b/c.txt"},
+		{[]string{"/a", "b"}, "/a/b"},
+		{[]string{"a", "", "b"}, "a/b"},
 		{[]string{"a"}, "a"},
 	}
 
