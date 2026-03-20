@@ -117,17 +117,7 @@ the constants and variable values to fit your specific use case.
 
 ## Contributing
 
-We warmly welcome contributions to the `billyfs` project. Whether you're fixing
-bugs, adding new features, or improving the documentation, your help is greatly
-appreciated. Please follow these steps to contribute:
-
-1. Fork the repository.
-2. Create a new branch for your feature or fix.
-3. Commit your changes with clear, descriptive messages.
-4. Push your changes and submit a pull request.
-
-We will review your pull request as soon as possible. Thank you for your
-contributing to the `absfs` ecosystem!
+We strongly encourage contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, testing requirements, and how to submit pull requests.
 
 ## LICENSE
 

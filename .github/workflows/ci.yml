@@ -36,6 +36,14 @@ jobs:
         if: matrix.os != 'ubuntu-latest'
         run: go test -v -race ./...
 
+      - name: Run benchmarks
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.23'
+        run: go test -bench=. -benchmem -benchtime=100ms ./...
+
+      - name: Run fuzz tests (seed corpus only)
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.23'
+        run: go test -run='^$' -fuzz=. -fuzztime=10s ./...
+
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.go == '1.23'
         uses: codecov/codecov-action@v4
