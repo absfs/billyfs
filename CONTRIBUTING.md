@@ -109,8 +109,8 @@ go test -fuzz=FuzzCreateFile -fuzztime=30s
 go test -fuzz=FuzzReadWrite -fuzztime=30s
 go test -fuzz=FuzzSymlink -fuzztime=30s
 
-# Run fuzz tests longer for deeper coverage
-go test -fuzz=. -fuzztime=5m
+# Run a specific fuzz test longer for deeper coverage
+go test -fuzz=FuzzReadWrite -fuzztime=5m
 ```
 
 ### Before Submitting PR
