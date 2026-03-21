@@ -167,7 +167,9 @@ func FuzzSymlink(f *testing.F) {
 			return
 		}
 
-		if readTarget != target {
+		// The underlying filesystem may clean paths (e.g. "/." -> "/"),
+		// so compare cleaned paths rather than raw strings.
+		if path.Clean(readTarget) != path.Clean(target) {
 			t.Errorf("symlink target mismatch: got %q, want %q", readTarget, target)
 		}
 	})
